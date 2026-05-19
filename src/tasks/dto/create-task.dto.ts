@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsDateString, IsUUID, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsUUID, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus, TaskPriority } from '@prisma/client';
 
@@ -7,6 +7,7 @@ export class CreateTaskDto {
     description: 'The title of the task',
     example: 'Implement login page',
   })
+  @IsNotEmpty()
   @IsString()
   title: string;
 
@@ -50,6 +51,7 @@ export class CreateTaskDto {
     description: 'UUID of the project this task belongs to',
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   })
+  @IsNotEmpty()
   @IsUUID()
   projectId: string;
 
