@@ -89,4 +89,5 @@
 - Add a pre-commit hook that validates enum imports in test files during the constants work — catch the pattern early before it lands in CI
 - Create a test fixture/factory for TaskStatus and other key enums (TaskPriority, UserRole if exists) as part of the test utilities library — makes it harder to accidentally hardcode values
 - Consider documenting a 'Contract-First Testing' approach: tests reference domain enums from shared constants, OpenAPI spec is generated from DTOs, and actual handler responses are validated against the spec — this creates a feedback loop that prevents drift
-
+- When spec files don't exist in repo, search patterns return 0 matches silently — validate file existence before attempting reads, or use broader glob patterns (e.g., `**/*.service.spec.ts`) to catch missing test infrastructure earlier in the build loop
+- Spec file creation without corresponding test execution (log: "No test files found for changed files — tests should be added") indicates missing Jest configuration or test runner setup — flag repos missing active test infrastructure before approving changes to service layer code
