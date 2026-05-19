@@ -28,4 +28,5 @@
 - Create a test coverage dashboard to visualize progress toward coverage targets and identify gaps
 - Document which API endpoints are 'critical' for coverage purposes—not all endpoints need 100% coverage
 - Consider adding a SECURITY.md file with the incident response runbook for transparency with users
-
+- npm audit CI checks pass silently when no CI is configured on the repo—future cycles should verify CI infrastructure exists and is reporting before marking security checks as complete
+- The build succeeded despite "no test files found for changed files" warning—future cycles should treat missing tests for security-critical changes (like audit workflows) as a blocker, not just a note
