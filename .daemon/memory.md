@@ -152,3 +152,10 @@
 - Consider establishing a 'async operation contract' doc: when to use fire-and-forget vs awaited operations, error handling expectations, and monitoring requirements
 - When file selection returns 0 matches initially, implement broader search patterns (e.g., regex wildcards) earlier in the build loop to avoid wasting rounds on failed reads before pivoting strategy
 - Autonomous agent scope rejection should be implemented as a validated schema constraint or pre-flight check in the request handler, not as a post-hoc file creation artifact — this prevents scope creep from entering the codebase at all
+**2026-05-19 — Goal Suggestions (Cycle #4412):**
+- Consider adding a BLOCKERS section that surfaces the two BLOCKER items separately — they're unblocking 4+ downstream critical items and should be visibly prioritized
+- Establish a 'Rejection Criteria' document for autonomous agent issues (like PR #20) — define what's out-of-scope upfront (e.g., external product decisions, roadmap changes, governance policy) to reduce rejection cycles
+- Add a 'Definition of Done' for the goal: unit test coverage >80%, all controllers validated, zero hardcoded magic strings, pagination contract documented, and fire-and-forget error handling enforced
+- Consider breaking out 'Dependabot auto-merge policy' as a separate CRITICAL item — it's foundational for the continuous dependency management workflow and blocking velocity
+- Add 'Establish monitoring/alerting for fire-and-forget EmailService operations' as a HIGH item — ties to audit goal and prevents silent failures in production
+
