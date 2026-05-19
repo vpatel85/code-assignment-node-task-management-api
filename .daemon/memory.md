@@ -104,4 +104,5 @@
 - Add a CRITICAL task to audit and update all controller DTOs with missing validation decorators (@IsNotEmpty, @IsString, @IsEnum, etc.) now that global ValidationPipe is live — validate the validation is actually working end-to-end
 - Create a quick checklist/template for controller DTOs to prevent future validation gaps (should include: all required fields decorated, enums use @IsEnum with ref to shared constants, and tests verify 400 errors for invalid payloads)
 - Consider adding a MEDIUM task to document the error response shape enforced by the HttpExceptionFilter in PR #13 — this is now the API contract for all validation errors
-
+- DTO validation decorators should include both format validators (e.g., `@IsString()`, `@IsEnum()`) AND constraint validators (e.g., `@MaxLength()`, `@Min()`) — searching for only one type missed coverage gaps; audit by decorator category to avoid partial hardening
+- Task DTO files lack corresponding `.spec.ts` unit tests for validation logic — future cycles should generate validation test suites alongside DTO changes to catch decorator misconfiguration before e2e tests
