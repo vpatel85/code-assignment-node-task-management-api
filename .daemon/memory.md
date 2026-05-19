@@ -45,3 +45,10 @@
 - Document the Linear triage workflow before accumulating too many issues (create issue templates, severity labels, assignment rules)
 - Swagger setup requires only 3 files touched (main.ts + 2 DTOs minimum) — controller annotations can be added incrementally; prioritize DTO decorators first since they define the schema contract that Swagger depends on
 - Build cycles without CI checks will auto-approve even when test files are missing — add a pre-flight validation step that flags repos lacking test infrastructure before proceeding to review stage
+**2026-05-19 — Goal Suggestions (Cycle #4395):**
+- Consider adding a pre-commit hook that runs `npm run typecheck` and lint before allowing commits—catch TypeScript errors early
+- Add a CI step that generates the OpenAPI spec and diffs it against a committed version to catch unintended API contract changes
+- Create a simple script to auto-merge Dependabot PRs for patch updates only (^0.0.x) after npm audit passes, reserve minor/major for manual review
+- TasksService tests are now the single biggest blocker—prioritize completing all CRUD + filter test cases before moving to integration tests
+- Consider adding response interceptor tests to ensure all API responses conform to the OpenAPI schema
+
