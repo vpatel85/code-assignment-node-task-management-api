@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    groups:
+      patch-minor-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "maintainers"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
