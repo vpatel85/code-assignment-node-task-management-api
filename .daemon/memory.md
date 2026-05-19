@@ -35,4 +35,5 @@
 - Test coverage should be measured and reported in CI before accepting PRs; recommend integrating codecov or similar to track progress toward 80% threshold
 - The 'triage and fix bugs' goal is vague—establish a clear Linear label system (e.g., 'bug-critical', 'bug-minor') and assign SLAs to each tier
 - API contract enforcement via OpenAPI is valuable; consider generating docs from spec rather than writing manually to keep spec/code in sync
-
+- Build log shows "No test files found for changed files — tests should be added" but delivery note claims tests were added; future cycles should verify test files actually exist in the repo before marking complete, as approval gate may pass without CI infrastructure to catch missing artifacts.
+- Search pattern `\.service\.spec\.ts` returned 0 matches initially, indicating test files may not follow standard naming convention or directory structure; future cycles should confirm Jest test file patterns and locations during file selection phase to avoid blind edits.
