@@ -68,3 +68,10 @@
 - Suggest splitting the 'Dependabot review' blocker into two items: (1) manual review of existing PRs + (2) enable auto-merge rules for patch/minor updates with 48h review SLA.
 - TasksService test suite creation requires mocking PrismaService and EmailService dependencies; ensure mock implementations cover all service methods called (e.g., sendTaskAssignmentNotification) to avoid runtime failures during test execution
 - Build log showed "No test files found for changed files" warning but PR was still approved — future cycles should enforce that unit test files must exist and pass locally before opening PRs, not rely on missing CI to catch gaps
+**2026-05-19 — Goal Suggestions (Cycle #4398):**
+- After PR #9 merges, immediately run the full test.yml to identify any flaky tests or environment issues before moving to integration tests
+- Consider adding a 'test-only' CircleCI/GitHub Actions job that runs just the TasksService tests on every commit to catch regressions early
+- For DTO validation, create a shared validation pipe (e.g., ValidateDtoPipe) and apply it globally to all controllers to enforce contracts consistently
+- Add a 'Contract Tests' section to CI that validates OpenAPI spec against actual HTTP responses — this will catch drift early
+- Consider establishing a dependency update policy: auto-merge Dependabot PRs for patch versions with passing tests, require manual review for minor/major versions
+
