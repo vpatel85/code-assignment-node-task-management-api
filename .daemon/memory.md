@@ -59,4 +59,5 @@
 - Consider adding a 'schema validation' step to integration tests that compares actual response structure against the OpenAPI spec (use a tool like json-schema-validator)
 - Prioritize the TasksService unit tests immediately—it's the last service blocking integration tests, which in turn block API contract validation
 - Set a 48-hour SLA for Dependabot PRs with auto-merge for patch versions only; minor versions require review (reduce toil of manual merges)
-
+- GitHub Actions workflow creation succeeded, but the build log explicitly noted "No test files found for changed files — tests should be added" and CI checks still showed as absent post-merge; future cycles should verify that workflows are actually *triggered* by repo events and that test suites exist before marking CI automation as complete.
+- File selection returned 0 matches when searching `.github` before the create operation; future cycles should use broader search patterns (e.g., `github` or `workflows`) or skip the selection step entirely for new directory structures to avoid wasted polling rounds.
