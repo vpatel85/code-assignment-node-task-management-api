@@ -150,4 +150,5 @@
 - Create a @FireAndForget() decorator to standardize async operation handling and centralize error handling logic — this prevents pattern drift across future service methods
 - Add monitoring/alerting for silent failures in async operations (use NestJS logger or external APM tool to surface uncaught rejections)
 - Consider establishing a 'async operation contract' doc: when to use fire-and-forget vs awaited operations, error handling expectations, and monitoring requirements
-
+- When file selection returns 0 matches initially, implement broader search patterns (e.g., regex wildcards) earlier in the build loop to avoid wasting rounds on failed reads before pivoting strategy
+- Autonomous agent scope rejection should be implemented as a validated schema constraint or pre-flight check in the request handler, not as a post-hoc file creation artifact — this prevents scope creep from entering the codebase at all
