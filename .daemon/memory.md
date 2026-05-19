@@ -84,3 +84,9 @@
 - Prioritize test reliability audit (PR #9 + #10) before enforcing coverage thresholds — flaky tests will undermine CI/CD confidence
 - When `npm audit` fails due to transitive dev dependencies, use `npm audit --audit-level=moderate` or add exceptions via `.npmrc` / `npm audit --json` filtering rather than `--omit=dev`, which removes security coverage for production code and creates false negatives in CI.
 - Before opening a PR, verify the repo has CI checks enabled and test files in place—this cycle's lack of CI infrastructure allowed a broken audit fix to be "approved," masking that the solution removed dev dependency scanning entirely instead of resolving the actual vulnerability.
+**2026-05-19 — Goal Suggestions (Cycle #4400):**
+- Consider implementing the shared constants/enums file BEFORE fixing the TaskStatus enum bug in PR #10 — this way the fix becomes a model for how all domain enums should be referenced across the codebase
+- Add a pre-commit hook that validates enum imports in test files during the constants work — catch the pattern early before it lands in CI
+- Create a test fixture/factory for TaskStatus and other key enums (TaskPriority, UserRole if exists) as part of the test utilities library — makes it harder to accidentally hardcode values
+- Consider documenting a 'Contract-First Testing' approach: tests reference domain enums from shared constants, OpenAPI spec is generated from DTOs, and actual handler responses are validated against the spec — this creates a feedback loop that prevents drift
+
