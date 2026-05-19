@@ -8,4 +8,8 @@ export class ProjectsService {
   async findAll() {
     return this.prisma.project.findMany();
   }
+
+  async findOne(id: string) {
+    return this.prisma.project.findUnique({ where: { id } });
+  }
 }
