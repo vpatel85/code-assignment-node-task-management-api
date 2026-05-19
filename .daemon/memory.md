@@ -76,3 +76,10 @@
 - Consider establishing a dependency update policy: auto-merge Dependabot PRs for patch versions with passing tests, require manual review for minor/major versions
 - When TaskStatus enum values are referenced in tests, verify they exist in the Prisma schema first—use `prisma generate` before running `tsc --noEmit` to ensure @prisma/client exports match the schema definition, avoiding TS2339 errors on missing enum properties.
 - Test files created by build loops should be validated against the actual enum definitions in the codebase before commit; add a pre-commit check that scans spec files for enum references and cross-validates them against schema.prisma to catch mismatches early.
+**2026-05-19 — Goal Suggestions (Cycle #4399):**
+- Before scaling test coverage further, invest in a test utilities package with mock factories and enum helpers — this prevents the enum reference bug from recurring
+- Add a lint rule (eslint-plugin-no-hardcoded-strings or custom) to catch magic strings in tests that should reference enums/constants
+- Document where TaskStatus enum should be sourced from — likely needs to be a shared constant exported from a domain module, not duplicated in tests
+- Consider adding a pre-test validation step that verifies all enums referenced in test files actually exist in the source code (could catch this in CI)
+- Prioritize test reliability audit (PR #9 + #10) before enforcing coverage thresholds — flaky tests will undermine CI/CD confidence
+
