@@ -119,4 +119,5 @@
 - Add a Prisma integration test that validates all service methods return hydrated relations (not just bare IDs) — this prevents regressions like the ones just fixed
 - Establish a pre-commit hook that runs `npx tsc --noEmit` to catch enum/constant reference errors before they reach CI
 - Document Prisma relation-loading best practices as a runbook for future service methods (include vs select trade-offs, N+1 prevention patterns)
-
+- Prisma schema changes require `npm run prisma:generate` before TypeScript compilation — future cycles should add this command to the build loop after schema edits to prevent downstream type errors
+- Migrations directory structure matters: verify migration naming conventions (timestamps) and SQL syntax match the project's prisma:migrate setup before committing, as malformed migrations can block local development
