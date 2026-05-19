@@ -121,3 +121,10 @@
 - Document Prisma relation-loading best practices as a runbook for future service methods (include vs select trade-offs, N+1 prevention patterns)
 - Prisma schema changes require `npm run prisma:generate` before TypeScript compilation — future cycles should add this command to the build loop after schema edits to prevent downstream type errors
 - Migrations directory structure matters: verify migration naming conventions (timestamps) and SQL syntax match the project's prisma:migrate setup before committing, as malformed migrations can block local development
+**2026-05-19 — Goal Suggestions (Cycle #4408):**
+- After PR #10 and the shared constants/enums work, create a linting rule (ESLint plugin or custom rule) that flags magic strings in test files — prevents regression of the enum reference bug pattern.
+- Consider adding a Prisma query logging utility to CI test runs to catch N+1 queries early — pair with performance regression tests to validate index ROI.
+- The Dependabot PR merge pattern (auto-merge for patch versions, 48h SLA for minor) should be documented in a MAINTENANCE.md file to establish team norms.
+- Once integration tests are added (CRITICAL), prioritize OpenAPI spec validation in CI — catch contract drift before it reaches production.
+- Suggest moving 'Add lint rule to catch hardcoded magic strings in tests' to BLOCKER status after PR #10 is fixed — prevents future regression.
+
