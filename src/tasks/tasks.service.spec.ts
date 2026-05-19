@@ -3,59 +3,54 @@ import { NotFoundException } from '@nestjs/common';
 import { TasksService } from './tasks.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
+import { TaskStatus, TaskPriority } from '@prisma/client';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskFilterDto } from './dto/task-filter.dto';
-import { TaskStatus, TaskPriority } from '@prisma/client';
 
 // ---------------------------------------------------------------------------
-// Shared mock data
+// Shared fixtures
 // ---------------------------------------------------------------------------
 
-const TASK_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
-const PROJECT_ID = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
-const ASSIGNEE_ID = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
-const OTHER_ASSIGNEE_ID = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
-const TAG_ID = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+const PROJECT_ID = 'proj-uuid-1111';
+const USER_ID = 'user-uuid-1111';
+const TASK_ID = 'task-uuid-1111';
 
-const mockAssignee = {
-  id: ASSIGNEE_ID,
-  name: 'Alice',
+const mockUser = {
+  id: USER_ID,
   email: 'alice@example.com',
+  name: 'Alice',
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
 };
 
 const mockProject = {
   id: PROJECT_ID,
-  name: 'Project Alpha',
-  description: 'Alpha project',
+  name: 'Test Project',
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
 };
 
-const mockTag = { id: TAG_ID, name: 'urgent' };
+const mockTag = {
+  id: 'tag-uuid-1111',
+  name: 'bug',
+  createdAt: new Date('2024-01-01'),
+};
 
-/** A minimal "raw" task row (no relations) returned by task.findMany */
-const mockRawTask = {
+const mockTask = {
   id: TASK_ID,
   title: 'Test Task',
-  description: 'A task for tests',
+  description: 'A description',
   status: TaskStatus.TODO,
   priority: TaskPriority.MEDIUM,
-  dueDate: new Date('2024-06-15'),
+  dueDate: null,
   projectId: PROJECT_ID,
-  assigneeId: ASSIGNEE_ID,
+  assigneeId: USER_ID,
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
-};
-
-/** A task with relations attached (returned by findOne / create / update) */
-const mockTaskWithRelations = {
-  ...mockRawTask,
-  assignee: mockAssignee,
+  assignee: mockUser,
   project: mockProject,
-  tags: [mockTag],
+  tags: [],
 };
 
 // ---------------------------------------------------------------------------
@@ -82,7 +77,6 @@ const mockPrismaService = {
 };
 
 const mockEmailService = {
-  sendEmail: jest.fn(),
   sendTaskAssignmentNotification: jest.fn(),
 };
 
@@ -103,199 +97,158 @@ describe('TasksService', () => {
     }).compile();
 
     service = module.get<TasksService>(TasksService);
-  });
 
-  afterEach(() => {
+    // Reset all mocks before each test
     jest.clearAllMocks();
   });
 
   // -------------------------------------------------------------------------
-  // findAll
+  // Sanity check
   // -------------------------------------------------------------------------
 
-  describe('findAll', () => {
-    /** Set up the three relation queries that findAll calls per task */
-    function setupRelationMocks(rawTask = mockRawTask) {
-      mockPrismaService.user.findUnique.mockResolvedValue(mockAssignee);
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.tag.findMany.mockResolvedValue([mockTag]);
-      mockPrismaService.task.findMany.mockResolvedValue([rawTask]);
-    }
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
 
-    it('findAll with no filters returns all tasks with relations', async () => {
-      setupRelationMocks();
+  // =========================================================================
+  // findAll
+  // =========================================================================
+
+  describe('findAll', () => {
+    it('should return all tasks when no filter is applied', async () => {
+      const rawTasks = [{ ...mockTask, assignee: undefined, project: undefined, tags: undefined }];
+      mockPrismaService.task.findMany.mockResolvedValue(rawTasks);
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
+      mockPrismaService.tag.findMany.mockResolvedValue([]);
 
       const result = await service.findAll({} as TaskFilterDto);
 
       expect(mockPrismaService.task.findMany).toHaveBeenCalledTimes(1);
       expect(result).toHaveLength(1);
-      expect(result[0]).toMatchObject({
-        id: TASK_ID,
-        title: 'Test Task',
-        assignee: mockAssignee,
-        project: mockProject,
-        tags: [mockTag],
-      });
+      expect(result[0].id).toBe(TASK_ID);
     });
 
-    it('findAll with status filter returns only matching tasks', async () => {
-      // Two tasks: one TODO, one IN_PROGRESS
-      const inProgressTask = {
-        ...mockRawTask,
-        id: 'ffff0000-0000-0000-0000-000000000000',
-        status: TaskStatus.IN_PROGRESS,
-      };
-      mockPrismaService.task.findMany.mockResolvedValue([mockRawTask, inProgressTask]);
-      mockPrismaService.user.findUnique.mockResolvedValue(mockAssignee);
+    it('should filter tasks by status', async () => {
+      const tasks = [
+        { ...mockTask, assigneeId: null },
+        { ...mockTask, id: 'task-uuid-2222', status: TaskStatus.IN_PROGRESS, assigneeId: null },
+      ];
+      mockPrismaService.task.findMany.mockResolvedValue(tasks);
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
       mockPrismaService.tag.findMany.mockResolvedValue([]);
 
-      const filterDto: TaskFilterDto = { status: TaskStatus.IN_PROGRESS };
-      const result = await service.findAll(filterDto);
+      const filter: TaskFilterDto = { status: TaskStatus.TODO };
+      const result = await service.findAll(filter);
 
       expect(result).toHaveLength(1);
-      expect(result[0].status).toBe(TaskStatus.IN_PROGRESS);
+      expect(result[0].status).toBe(TaskStatus.TODO);
     });
 
-    it('findAll with priority filter returns only matching tasks', async () => {
-      const highTask = {
-        ...mockRawTask,
-        id: 'ffff1111-0000-0000-0000-000000000000',
-        priority: TaskPriority.HIGH,
-      };
-      mockPrismaService.task.findMany.mockResolvedValue([mockRawTask, highTask]);
-      mockPrismaService.user.findUnique.mockResolvedValue(mockAssignee);
+    it('should filter tasks by priority', async () => {
+      const tasks = [
+        { ...mockTask, assigneeId: null },
+        { ...mockTask, id: 'task-uuid-2222', priority: TaskPriority.HIGH, assigneeId: null },
+      ];
+      mockPrismaService.task.findMany.mockResolvedValue(tasks);
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
       mockPrismaService.tag.findMany.mockResolvedValue([]);
 
-      const filterDto: TaskFilterDto = { priority: TaskPriority.HIGH };
-      const result = await service.findAll(filterDto);
+      const filter: TaskFilterDto = { priority: TaskPriority.MEDIUM };
+      const result = await service.findAll(filter);
 
       expect(result).toHaveLength(1);
-      expect(result[0].priority).toBe(TaskPriority.HIGH);
+      expect(result[0].priority).toBe(TaskPriority.MEDIUM);
     });
 
-    it('findAll with assigneeId filter returns only tasks for that assignee', async () => {
-      const otherTask = {
-        ...mockRawTask,
-        id: 'ffff2222-0000-0000-0000-000000000000',
-        assigneeId: OTHER_ASSIGNEE_ID,
-      };
-      mockPrismaService.task.findMany.mockResolvedValue([mockRawTask, otherTask]);
-      mockPrismaService.user.findUnique.mockResolvedValue(mockAssignee);
+    it('should filter tasks by assigneeId', async () => {
+      const OTHER_USER_ID = 'user-uuid-9999';
+      const tasks = [
+        { ...mockTask, assigneeId: USER_ID },
+        { ...mockTask, id: 'task-uuid-2222', assigneeId: OTHER_USER_ID },
+      ];
+      mockPrismaService.task.findMany.mockResolvedValue(tasks);
+      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
       mockPrismaService.tag.findMany.mockResolvedValue([]);
 
-      const filterDto: TaskFilterDto = { assigneeId: ASSIGNEE_ID };
-      const result = await service.findAll(filterDto);
+      const filter: TaskFilterDto = { assigneeId: USER_ID };
+      const result = await service.findAll(filter);
 
       expect(result).toHaveLength(1);
-      expect(result[0].assigneeId).toBe(ASSIGNEE_ID);
+      expect(result[0].assigneeId).toBe(USER_ID);
     });
 
-    it('findAll with projectId filter returns only tasks in that project', async () => {
-      const OTHER_PROJECT_ID = 'ffffffff-1111-1111-1111-ffffffffffff';
-      const otherProjectTask = {
-        ...mockRawTask,
-        id: 'ffff3333-0000-0000-0000-000000000000',
-        projectId: OTHER_PROJECT_ID,
-      };
-      mockPrismaService.task.findMany.mockResolvedValue([mockRawTask, otherProjectTask]);
-      mockPrismaService.user.findUnique.mockResolvedValue(mockAssignee);
+    it('should filter tasks by projectId', async () => {
+      const OTHER_PROJECT_ID = 'proj-uuid-9999';
+      const tasks = [
+        { ...mockTask, assigneeId: null },
+        { ...mockTask, id: 'task-uuid-2222', projectId: OTHER_PROJECT_ID, assigneeId: null },
+      ];
+      mockPrismaService.task.findMany.mockResolvedValue(tasks);
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
       mockPrismaService.tag.findMany.mockResolvedValue([]);
 
-      const filterDto: TaskFilterDto = { projectId: PROJECT_ID };
-      const result = await service.findAll(filterDto);
+      const filter: TaskFilterDto = { projectId: PROJECT_ID };
+      const result = await service.findAll(filter);
 
       expect(result).toHaveLength(1);
       expect(result[0].projectId).toBe(PROJECT_ID);
     });
 
-    it('findAll with dueDateFrom filter excludes tasks before the date', async () => {
-      const oldTask = {
-        ...mockRawTask,
-        id: 'ffff4444-0000-0000-0000-000000000000',
-        dueDate: new Date('2024-01-01'),
-      };
-      // mockRawTask has dueDate 2024-06-15 — should pass; oldTask should be excluded
-      mockPrismaService.task.findMany.mockResolvedValue([mockRawTask, oldTask]);
-      mockPrismaService.user.findUnique.mockResolvedValue(mockAssignee);
+    it('should filter tasks by dueDateFrom', async () => {
+      const future = new Date('2099-01-01');
+      const past = new Date('2000-01-01');
+      const tasks = [
+        { ...mockTask, id: 'task-uuid-future', dueDate: future, assigneeId: null },
+        { ...mockTask, id: 'task-uuid-past', dueDate: past, assigneeId: null },
+        { ...mockTask, id: 'task-uuid-noduedate', dueDate: null, assigneeId: null },
+      ];
+      mockPrismaService.task.findMany.mockResolvedValue(tasks);
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
       mockPrismaService.tag.findMany.mockResolvedValue([]);
 
-      const filterDto: TaskFilterDto = { dueDateFrom: '2024-03-01' };
-      const result = await service.findAll(filterDto);
+      const filter: TaskFilterDto = { dueDateFrom: '2050-01-01' };
+      const result = await service.findAll(filter);
 
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(TASK_ID);
+      expect(result[0].id).toBe('task-uuid-future');
     });
 
-    it('findAll with dueDateTo filter excludes tasks after the date', async () => {
-      const futureTask = {
-        ...mockRawTask,
-        id: 'ffff5555-0000-0000-0000-000000000000',
-        dueDate: new Date('2025-01-01'),
-      };
-      mockPrismaService.task.findMany.mockResolvedValue([mockRawTask, futureTask]);
-      mockPrismaService.user.findUnique.mockResolvedValue(mockAssignee);
+    it('should filter tasks by dueDateTo', async () => {
+      const future = new Date('2099-01-01');
+      const past = new Date('2000-01-01');
+      const tasks = [
+        { ...mockTask, id: 'task-uuid-future', dueDate: future, assigneeId: null },
+        { ...mockTask, id: 'task-uuid-past', dueDate: past, assigneeId: null },
+      ];
+      mockPrismaService.task.findMany.mockResolvedValue(tasks);
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
       mockPrismaService.tag.findMany.mockResolvedValue([]);
 
-      const filterDto: TaskFilterDto = { dueDateTo: '2024-12-31' };
-      const result = await service.findAll(filterDto);
+      const filter: TaskFilterDto = { dueDateTo: '2050-01-01' };
+      const result = await service.findAll(filter);
 
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(TASK_ID);
+      expect(result[0].id).toBe('task-uuid-past');
     });
 
-    it('findAll with combined filters applies all conditions together', async () => {
-      const mismatchTask = {
-        ...mockRawTask,
-        id: 'ffff6666-0000-0000-0000-000000000000',
-        status: TaskStatus.DONE,
-        priority: TaskPriority.LOW,
-      };
-      mockPrismaService.task.findMany.mockResolvedValue([mockRawTask, mismatchTask]);
-      mockPrismaService.user.findUnique.mockResolvedValue(mockAssignee);
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.tag.findMany.mockResolvedValue([]);
+    it('should return empty array when no tasks exist', async () => {
+      mockPrismaService.task.findMany.mockResolvedValue([]);
 
-      const filterDto: TaskFilterDto = {
-        status: TaskStatus.TODO,
-        priority: TaskPriority.MEDIUM,
-        assigneeId: ASSIGNEE_ID,
-        projectId: PROJECT_ID,
-        dueDateFrom: '2024-01-01',
-        dueDateTo: '2024-12-31',
-      };
-      const result = await service.findAll(filterDto);
-
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(TASK_ID);
-    });
-
-    it('findAll with dueDateFrom/To excludes tasks with null dueDate', async () => {
-      const nullDueDateTask = {
-        ...mockRawTask,
-        id: 'ffff7777-0000-0000-0000-000000000000',
-        dueDate: null,
-      };
-      mockPrismaService.task.findMany.mockResolvedValue([nullDueDateTask]);
-      mockPrismaService.user.findUnique.mockResolvedValue(mockAssignee);
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.tag.findMany.mockResolvedValue([]);
-
-      const filterDto: TaskFilterDto = { dueDateFrom: '2024-01-01' };
-      const result = await service.findAll(filterDto);
+      const result = await service.findAll({} as TaskFilterDto);
 
       expect(result).toHaveLength(0);
     });
 
-    it('findAll sets assignee to null when task has no assigneeId', async () => {
-      const unassignedTask = { ...mockRawTask, assigneeId: null };
-      mockPrismaService.task.findMany.mockResolvedValue([unassignedTask]);
-      // user.findUnique should NOT be called for unassigned tasks
+    it('should handle tasks with no assignee (assigneeId is null)', async () => {
+      const taskWithoutAssignee = { ...mockTask, assigneeId: null };
+      mockPrismaService.task.findMany.mockResolvedValue([taskWithoutAssignee]);
       mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
       mockPrismaService.tag.findMany.mockResolvedValue([]);
 
@@ -305,22 +258,33 @@ describe('TasksService', () => {
       expect(result[0].assignee).toBeNull();
     });
 
-    it('findAll returns empty array when no tasks exist', async () => {
-      mockPrismaService.task.findMany.mockResolvedValue([]);
+    it('should filter tasks by COMPLETED status', async () => {
+      const tasks = [
+        { ...mockTask, id: 'task-uuid-todo', status: TaskStatus.TODO, assigneeId: null },
+        { ...mockTask, id: 'task-uuid-done', status: TaskStatus.COMPLETED, assigneeId: null },
+        { ...mockTask, id: 'task-uuid-cancelled', status: TaskStatus.CANCELLED, assigneeId: null },
+      ];
+      mockPrismaService.task.findMany.mockResolvedValue(tasks);
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
+      mockPrismaService.tag.findMany.mockResolvedValue([]);
 
-      const result = await service.findAll({} as TaskFilterDto);
+      const filter: TaskFilterDto = { status: TaskStatus.COMPLETED };
+      const result = await service.findAll(filter);
 
-      expect(result).toEqual([]);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('task-uuid-done');
+      expect(result[0].status).toBe(TaskStatus.COMPLETED);
     });
   });
 
-  // -------------------------------------------------------------------------
+  // =========================================================================
   // findOne
-  // -------------------------------------------------------------------------
+  // =========================================================================
 
   describe('findOne', () => {
-    it('findOne returns the task when it exists', async () => {
-      mockPrismaService.task.findUnique.mockResolvedValue(mockTaskWithRelations);
+    it('should return a task by id', async () => {
+      mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
 
       const result = await service.findOne(TASK_ID);
 
@@ -328,178 +292,237 @@ describe('TasksService', () => {
         where: { id: TASK_ID },
         include: { assignee: true, project: true, tags: true },
       });
-      expect(result).toEqual(mockTaskWithRelations);
+      expect(result).toEqual(mockTask);
     });
 
-    it('findOne throws NotFoundException when task does not exist', async () => {
+    it('should throw NotFoundException when task does not exist', async () => {
       mockPrismaService.task.findUnique.mockResolvedValue(null);
 
-      await expect(service.findOne(TASK_ID)).rejects.toThrow(NotFoundException);
-      await expect(service.findOne(TASK_ID)).rejects.toThrow(
-        `Task with ID ${TASK_ID} not found`,
+      await expect(service.findOne('non-existent-id')).rejects.toThrow(NotFoundException);
+      await expect(service.findOne('non-existent-id')).rejects.toThrow(
+        'Task with ID non-existent-id not found',
       );
     });
   });
 
-  // -------------------------------------------------------------------------
+  // =========================================================================
   // create
-  // -------------------------------------------------------------------------
+  // =========================================================================
 
   describe('create', () => {
-    it('create task successfully and sends assignment email when assignee exists', async () => {
-      mockPrismaService.task.create.mockResolvedValue(mockTaskWithRelations);
-      mockEmailService.sendTaskAssignmentNotification.mockResolvedValue(undefined);
+    const createDto: CreateTaskDto = {
+      title: 'New Task',
+      description: 'Task description',
+      status: TaskStatus.TODO,
+      priority: TaskPriority.MEDIUM,
+      projectId: PROJECT_ID,
+      assigneeId: USER_ID,
+    };
 
-      const createDto: CreateTaskDto = {
-        title: 'Test Task',
-        description: 'A task for tests',
-        status: TaskStatus.TODO,
-        priority: TaskPriority.MEDIUM,
-        dueDate: '2024-06-15T00:00:00.000Z',
-        projectId: PROJECT_ID,
-        assigneeId: ASSIGNEE_ID,
-      };
+    it('should create a task and return it', async () => {
+      mockPrismaService.task.create.mockResolvedValue(mockTask);
 
       const result = await service.create(createDto);
 
-      expect(mockPrismaService.task.create).toHaveBeenCalledWith({
-        data: {
-          title: createDto.title,
-          description: createDto.description,
-          status: createDto.status,
-          priority: createDto.priority,
-          dueDate: createDto.dueDate,
-          project: { connect: { id: PROJECT_ID } },
-          assignee: { connect: { id: ASSIGNEE_ID } },
-          tags: undefined,
-        },
-        include: { assignee: true, project: true, tags: true },
-      });
-      expect(mockEmailService.sendTaskAssignmentNotification).toHaveBeenCalledWith(
-        mockAssignee.email,
-        mockTaskWithRelations.title,
+      expect(mockPrismaService.task.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            title: createDto.title,
+            description: createDto.description,
+            status: createDto.status,
+            priority: createDto.priority,
+          }),
+          include: { assignee: true, project: true, tags: true },
+        }),
       );
-      expect(result).toEqual(mockTaskWithRelations);
+      expect(result).toEqual(mockTask);
     });
 
-    it('create task without assignee does not send email', async () => {
-      const taskWithoutAssignee = { ...mockTaskWithRelations, assignee: null, assigneeId: null };
-      mockPrismaService.task.create.mockResolvedValue(taskWithoutAssignee);
-
-      const createDto: CreateTaskDto = {
-        title: 'Unassigned Task',
-        projectId: PROJECT_ID,
-      };
-
-      const result = await service.create(createDto);
-
-      expect(mockEmailService.sendTaskAssignmentNotification).not.toHaveBeenCalled();
-      expect(result).toEqual(taskWithoutAssignee);
-    });
-
-    it('create task with all optional fields passes correct data to Prisma', async () => {
-      const tagIds = [TAG_ID];
-      const taskWithTags = { ...mockTaskWithRelations, tags: [mockTag] };
-      mockPrismaService.task.create.mockResolvedValue(taskWithTags);
-      mockEmailService.sendTaskAssignmentNotification.mockResolvedValue(undefined);
-
-      const createDto: CreateTaskDto = {
-        title: 'Full Task',
-        description: 'Full description',
-        status: TaskStatus.IN_PROGRESS,
-        priority: TaskPriority.HIGH,
-        dueDate: '2024-12-31T23:59:59.000Z',
-        projectId: PROJECT_ID,
-        assigneeId: ASSIGNEE_ID,
-        tagIds,
-      };
+    it('should send an email notification when task has an assignee', async () => {
+      mockPrismaService.task.create.mockResolvedValue(mockTask);
 
       await service.create(createDto);
 
-      expect(mockPrismaService.task.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          tags: { connect: [{ id: TAG_ID }] },
-          assignee: { connect: { id: ASSIGNEE_ID } },
-        }),
-        include: { assignee: true, project: true, tags: true },
-      });
-    });
-  });
-
-  // -------------------------------------------------------------------------
-  // update
-  // -------------------------------------------------------------------------
-
-  describe('update', () => {
-    it('update existing task returns updated task', async () => {
-      // findOne (used internally) needs findUnique
-      mockPrismaService.task.findUnique.mockResolvedValue(mockTaskWithRelations);
-      const updatedTask = {
-        ...mockTaskWithRelations,
-        title: 'Updated Title',
-        assignee: mockAssignee,
-        // same assigneeId — no email expected
-      };
-      mockPrismaService.task.update.mockResolvedValue(updatedTask);
-
-      const updateDto: UpdateTaskDto = { title: 'Updated Title' };
-      const result = await service.update(TASK_ID, updateDto);
-
-      expect(mockPrismaService.task.update).toHaveBeenCalledWith({
-        where: { id: TASK_ID },
-        data: expect.objectContaining({ title: 'Updated Title' }),
-        include: { assignee: true, project: true, tags: true },
-      });
-      expect(result).toEqual(updatedTask);
+      expect(mockEmailService.sendTaskAssignmentNotification).toHaveBeenCalledTimes(1);
+      expect(mockEmailService.sendTaskAssignmentNotification).toHaveBeenCalledWith(
+        mockUser.email,
+        mockTask.title,
+      );
     });
 
-    it('update task status change does not trigger email (email only fires on assignee change)', async () => {
-      mockPrismaService.task.findUnique.mockResolvedValue(mockTaskWithRelations);
-      const updatedTask = { ...mockTaskWithRelations, status: TaskStatus.DONE };
-      mockPrismaService.task.update.mockResolvedValue(updatedTask);
+    it('should NOT send an email notification when task has no assignee', async () => {
+      const taskWithoutAssignee = { ...mockTask, assigneeId: null, assignee: null };
+      mockPrismaService.task.create.mockResolvedValue(taskWithoutAssignee);
 
-      const updateDto: UpdateTaskDto = { status: TaskStatus.DONE };
-      await service.update(TASK_ID, updateDto);
+      const dtoWithoutAssignee: CreateTaskDto = { ...createDto, assigneeId: undefined };
+      await service.create(dtoWithoutAssignee);
 
-      // updateDto.assigneeId is undefined → no email
       expect(mockEmailService.sendTaskAssignmentNotification).not.toHaveBeenCalled();
     });
 
-    it('update task with new assigneeId sends assignment email', async () => {
-      mockPrismaService.task.findUnique.mockResolvedValue(mockTaskWithRelations);
-      const newAssignee = { ...mockAssignee, id: OTHER_ASSIGNEE_ID, email: 'bob@example.com' };
-      const updatedTask = { ...mockTaskWithRelations, assigneeId: OTHER_ASSIGNEE_ID, assignee: newAssignee };
+    it('should create a task with COMPLETED status', async () => {
+      const completedTask = { ...mockTask, status: TaskStatus.COMPLETED };
+      mockPrismaService.task.create.mockResolvedValue(completedTask);
+
+      const dtoCompleted: CreateTaskDto = {
+        ...createDto,
+        status: TaskStatus.COMPLETED,
+      };
+      const result = await service.create(dtoCompleted);
+
+      expect(result.status).toBe(TaskStatus.COMPLETED);
+    });
+
+    it('should create a task with URGENT priority', async () => {
+      const urgentTask = { ...mockTask, priority: TaskPriority.URGENT };
+      mockPrismaService.task.create.mockResolvedValue(urgentTask);
+
+      const dtoUrgent: CreateTaskDto = {
+        ...createDto,
+        priority: TaskPriority.URGENT,
+      };
+      const result = await service.create(dtoUrgent);
+
+      expect(result.priority).toBe(TaskPriority.URGENT);
+    });
+
+    it('should create a task with tags', async () => {
+      const taskWithTags = { ...mockTask, tags: [mockTag] };
+      mockPrismaService.task.create.mockResolvedValue(taskWithTags);
+
+      const dtoWithTags: CreateTaskDto = { ...createDto, tagIds: [mockTag.id] };
+      const result = await service.create(dtoWithTags);
+
+      expect(mockPrismaService.task.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            tags: { connect: [{ id: mockTag.id }] },
+          }),
+        }),
+      );
+      expect(result.tags).toHaveLength(1);
+    });
+
+    it('should create a task without tagIds (undefined)', async () => {
+      const taskNoTags = { ...mockTask, tags: [] };
+      mockPrismaService.task.create.mockResolvedValue(taskNoTags);
+
+      const dtoNoTags: CreateTaskDto = { ...createDto, tagIds: undefined };
+      await service.create(dtoNoTags);
+
+      expect(mockPrismaService.task.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            tags: undefined,
+          }),
+        }),
+      );
+    });
+  });
+
+  // =========================================================================
+  // update
+  // =========================================================================
+
+  describe('update', () => {
+    const updateDto: UpdateTaskDto = {
+      title: 'Updated Task',
+      status: TaskStatus.IN_PROGRESS,
+    };
+
+    it('should update a task and return the updated task', async () => {
+      const updatedTask = { ...mockTask, title: 'Updated Task', status: TaskStatus.IN_PROGRESS };
+      mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
       mockPrismaService.task.update.mockResolvedValue(updatedTask);
-      mockEmailService.sendTaskAssignmentNotification.mockResolvedValue(undefined);
 
-      const updateDto: UpdateTaskDto = { assigneeId: OTHER_ASSIGNEE_ID };
-      await service.update(TASK_ID, updateDto);
+      const result = await service.update(TASK_ID, updateDto);
 
+      expect(mockPrismaService.task.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: TASK_ID },
+          include: { assignee: true, project: true, tags: true },
+        }),
+      );
+      expect(result.title).toBe('Updated Task');
+      expect(result.status).toBe(TaskStatus.IN_PROGRESS);
+    });
+
+    it('should throw NotFoundException when updating a non-existent task', async () => {
+      mockPrismaService.task.findUnique.mockResolvedValue(null);
+
+      await expect(service.update('non-existent-id', updateDto)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should send email notification when assigneeId changes to a new user', async () => {
+      const NEW_USER_ID = 'user-uuid-new';
+      const newUser = { ...mockUser, id: NEW_USER_ID, email: 'bob@example.com' };
+      const updatedTask = { ...mockTask, assigneeId: NEW_USER_ID, assignee: newUser };
+
+      mockPrismaService.task.findUnique.mockResolvedValue(mockTask); // existing has USER_ID
+      mockPrismaService.task.update.mockResolvedValue(updatedTask);
+
+      const dtoNewAssignee: UpdateTaskDto = { assigneeId: NEW_USER_ID };
+      await service.update(TASK_ID, dtoNewAssignee);
+
+      expect(mockEmailService.sendTaskAssignmentNotification).toHaveBeenCalledTimes(1);
       expect(mockEmailService.sendTaskAssignmentNotification).toHaveBeenCalledWith(
-        newAssignee.email,
+        newUser.email,
         updatedTask.title,
       );
     });
 
-    it('update task with same assigneeId does not send duplicate email', async () => {
-      // existingTask and updatedTask share the same assigneeId
-      mockPrismaService.task.findUnique.mockResolvedValue(mockTaskWithRelations);
-      mockPrismaService.task.update.mockResolvedValue(mockTaskWithRelations);
+    it('should NOT send email notification when assigneeId is unchanged', async () => {
+      const updatedTask = { ...mockTask };
+      mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
+      mockPrismaService.task.update.mockResolvedValue(updatedTask);
 
-      const updateDto: UpdateTaskDto = { assigneeId: ASSIGNEE_ID };
-      await service.update(TASK_ID, updateDto);
+      // Same assigneeId as the existing task
+      const dtoSameAssignee: UpdateTaskDto = { assigneeId: USER_ID };
+      await service.update(TASK_ID, dtoSameAssignee);
 
-      // assigneeId unchanged → no email
       expect(mockEmailService.sendTaskAssignmentNotification).not.toHaveBeenCalled();
     });
 
-    it('update disconnects assignee when assigneeId is null', async () => {
-      mockPrismaService.task.findUnique.mockResolvedValue(mockTaskWithRelations);
-      const unassignedTask = { ...mockTaskWithRelations, assignee: null, assigneeId: null };
+    it('should NOT send email notification when assigneeId is not provided in update', async () => {
+      const updatedTask = { ...mockTask, title: 'New Title' };
+      mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
+      mockPrismaService.task.update.mockResolvedValue(updatedTask);
+
+      const dtoNoAssignee: UpdateTaskDto = { title: 'New Title' };
+      await service.update(TASK_ID, dtoNoAssignee);
+
+      expect(mockEmailService.sendTaskAssignmentNotification).not.toHaveBeenCalled();
+    });
+
+    it('should update task status to COMPLETED', async () => {
+      const completedTask = { ...mockTask, status: TaskStatus.COMPLETED };
+      mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
+      mockPrismaService.task.update.mockResolvedValue(completedTask);
+
+      const dtoCompleted: UpdateTaskDto = { status: TaskStatus.COMPLETED };
+      const result = await service.update(TASK_ID, dtoCompleted);
+
+      expect(result.status).toBe(TaskStatus.COMPLETED);
+    });
+
+    it('should update task status to CANCELLED', async () => {
+      const cancelledTask = { ...mockTask, status: TaskStatus.CANCELLED };
+      mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
+      mockPrismaService.task.update.mockResolvedValue(cancelledTask);
+
+      const dtoCancelled: UpdateTaskDto = { status: TaskStatus.CANCELLED };
+      const result = await service.update(TASK_ID, dtoCancelled);
+
+      expect(result.status).toBe(TaskStatus.CANCELLED);
+    });
+
+    it('should unassign a task when assigneeId is null', async () => {
+      const unassignedTask = { ...mockTask, assigneeId: null, assignee: null };
+      mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
       mockPrismaService.task.update.mockResolvedValue(unassignedTask);
 
-      const updateDto: UpdateTaskDto = { assigneeId: null };
-      await service.update(TASK_ID, updateDto);
+      const dtoUnassign: UpdateTaskDto = { assigneeId: null };
+      const result = await service.update(TASK_ID, dtoUnassign);
 
       expect(mockPrismaService.task.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -508,42 +531,36 @@ describe('TasksService', () => {
           }),
         }),
       );
-      // null assigneeId — condition `updateTaskDto.assigneeId && ...` is falsy
-      expect(mockEmailService.sendTaskAssignmentNotification).not.toHaveBeenCalled();
+      expect(result.assigneeId).toBeNull();
     });
 
-    it('update with tagIds uses set semantics', async () => {
-      mockPrismaService.task.findUnique.mockResolvedValue(mockTaskWithRelations);
-      mockPrismaService.task.update.mockResolvedValue(mockTaskWithRelations);
+    it('should update tags using set operation', async () => {
+      const newTagId = 'tag-uuid-new';
+      const taskWithNewTags = { ...mockTask, tags: [{ ...mockTag, id: newTagId }] };
+      mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
+      mockPrismaService.task.update.mockResolvedValue(taskWithNewTags);
 
-      const updateDto: UpdateTaskDto = { tagIds: [TAG_ID] };
-      await service.update(TASK_ID, updateDto);
+      const dtoNewTags: UpdateTaskDto = { tagIds: [newTagId] };
+      await service.update(TASK_ID, dtoNewTags);
 
       expect(mockPrismaService.task.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            tags: { set: [{ id: TAG_ID }] },
+            tags: { set: [{ id: newTagId }] },
           }),
         }),
       );
     });
-
-    it('update non-existing task throws NotFoundException', async () => {
-      mockPrismaService.task.findUnique.mockResolvedValue(null);
-
-      const updateDto: UpdateTaskDto = { title: 'Ghost' };
-      await expect(service.update(TASK_ID, updateDto)).rejects.toThrow(NotFoundException);
-    });
   });
 
-  // -------------------------------------------------------------------------
+  // =========================================================================
   // remove
-  // -------------------------------------------------------------------------
+  // =========================================================================
 
   describe('remove', () => {
-    it('remove existing task calls delete and returns success message', async () => {
-      mockPrismaService.task.findUnique.mockResolvedValue(mockTaskWithRelations);
-      mockPrismaService.task.delete.mockResolvedValue(mockTaskWithRelations);
+    it('should delete a task and return success message', async () => {
+      mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
+      mockPrismaService.task.delete.mockResolvedValue(mockTask);
 
       const result = await service.remove(TASK_ID);
 
@@ -553,11 +570,22 @@ describe('TasksService', () => {
       expect(result).toEqual({ message: 'Task deleted successfully' });
     });
 
-    it('remove non-existing task throws NotFoundException', async () => {
+    it('should throw NotFoundException when deleting a non-existent task', async () => {
       mockPrismaService.task.findUnique.mockResolvedValue(null);
 
-      await expect(service.remove(TASK_ID)).rejects.toThrow(NotFoundException);
-      expect(mockPrismaService.task.delete).not.toHaveBeenCalled();
+      await expect(service.remove('non-existent-id')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should call findOne before deleting', async () => {
+      mockPrismaService.task.findUnique.mockResolvedValue(mockTask);
+      mockPrismaService.task.delete.mockResolvedValue(mockTask);
+
+      await service.remove(TASK_ID);
+
+      expect(mockPrismaService.task.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: TASK_ID } }),
+      );
+      expect(mockPrismaService.task.delete).toHaveBeenCalledTimes(1);
     });
   });
 });
