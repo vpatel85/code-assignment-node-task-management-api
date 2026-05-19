@@ -106,3 +106,10 @@
 - Consider adding a MEDIUM task to document the error response shape enforced by the HttpExceptionFilter in PR #13 — this is now the API contract for all validation errors
 - DTO validation decorators should include both format validators (e.g., `@IsString()`, `@IsEnum()`) AND constraint validators (e.g., `@MaxLength()`, `@Min()`) — searching for only one type missed coverage gaps; audit by decorator category to avoid partial hardening
 - Task DTO files lack corresponding `.spec.ts` unit tests for validation logic — future cycles should generate validation test suites alongside DTO changes to catch decorator misconfiguration before e2e tests
+**2026-05-19 — Goal Suggestions (Cycle #4404):**
+- After fixing the TaskStatus enum in PR #10, immediately prioritize creating the shared constants/enums file—this is the root cause of the hardcoding pattern. Make it a fast follow to prevent the same issue in other services.
+- Consider making DTO validation propagation (Projects + Users services) a single grouped task rather than separate PRs—create a checklist-style PR that hardens all remaining DTOs in one pass, then measure overall validation coverage.
+- Before investing in test utilities library, complete 2-3 more integration tests manually to identify the actual patterns that repeat—build utilities based on real needs rather than anticipated ones.
+- The 'failed' dependency bump cycle suggests Dependabot PRs may have breaking changes or test failures. Recommend triaging one of those failed PRs next to unblock the auto-merge workflow and establish the actual dependency update cadence.
+- Add a quick inventory task: audit which endpoints are still missing @UseGuards/@UsePipes decorators or have controller-level DTO enforcement gaps—this will clarify scope for the validation propagation effort.
+
