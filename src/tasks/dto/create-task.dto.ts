@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsUUID, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsUUID, IsArray, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TaskStatus, TaskPriority } from '@prisma/client';
 
@@ -9,6 +9,7 @@ export class CreateTaskDto {
   })
   @IsNotEmpty()
   @IsString()
+  @MaxLength(255)
   title: string;
 
   @ApiPropertyOptional({
@@ -17,6 +18,7 @@ export class CreateTaskDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(2000)
   description?: string;
 
   @ApiPropertyOptional({
