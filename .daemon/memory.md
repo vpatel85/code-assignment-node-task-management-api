@@ -99,3 +99,9 @@
 - Monitor Dependabot PR velocity and establish auto-merge criteria (e.g., patch-only, test passing, security audit clean) to reduce manual review burden
 - Semantic regression checks can fail silently with JSON parse errors (position 977) — validate filter/pipe output structure early, especially when introducing new exception formatting, to catch malformed responses before PR approval
 - ValidationPipe with custom exception factory requires explicit HttpStatus and error shape definition in the filter — relying on NestJS defaults may not enforce consistent 400 responses across all validation scenarios (DTO, query params, etc.)
+**2026-05-19 — Goal Suggestions (Cycle #4403):**
+- Consider promoting the enum/constants refactor (BLOCKER) higher priority since PR #10 and #13 both highlight this as a root cause — fixing this unlocks cleaner validation across all controllers
+- Add a CRITICAL task to audit and update all controller DTOs with missing validation decorators (@IsNotEmpty, @IsString, @IsEnum, etc.) now that global ValidationPipe is live — validate the validation is actually working end-to-end
+- Create a quick checklist/template for controller DTOs to prevent future validation gaps (should include: all required fields decorated, enums use @IsEnum with ref to shared constants, and tests verify 400 errors for invalid payloads)
+- Consider adding a MEDIUM task to document the error response shape enforced by the HttpExceptionFilter in PR #13 — this is now the API contract for all validation errors
+
