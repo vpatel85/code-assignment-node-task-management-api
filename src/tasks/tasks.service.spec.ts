@@ -115,127 +115,149 @@ describe('TasksService', () => {
   // =========================================================================
 
   describe('findAll', () => {
-    it('should return all tasks when no filter is applied', async () => {
-      const rawTasks = [{ ...mockTask, assignee: undefined, project: undefined, tags: undefined }];
-      mockPrismaService.task.findMany.mockResolvedValue(rawTasks);
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.tag.findMany.mockResolvedValue([]);
+    it('should return tasks with relations using a single query (no filter)', async () => {
+      const tasksWithRelations = [{ ...mockTask }];
+      mockPrismaService.task.findMany.mockResolvedValue(tasksWithRelations);
 
       const result = await service.findAll({} as TaskFilterDto);
 
+      expect(mockPrismaService.task.findMany).toHaveBeenCalledWith({
+        where: {},
+        include: { assignee: true, project: true, tags: true },
+        orderBy: { createdAt: 'desc' },
+      });
       expect(mockPrismaService.task.findMany).toHaveBeenCalledTimes(1);
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe(TASK_ID);
     });
 
-    it('should filter tasks by status', async () => {
-      const tasks = [
-        { ...mockTask, assigneeId: null },
-        { ...mockTask, id: 'task-uuid-2222', status: TaskStatus.IN_PROGRESS, assigneeId: null },
-      ];
-      mockPrismaService.task.findMany.mockResolvedValue(tasks);
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.tag.findMany.mockResolvedValue([]);
+    it('should pass status filter in where clause', async () => {
+      mockPrismaService.task.findMany.mockResolvedValue([{ ...mockTask }]);
 
       const filter: TaskFilterDto = { status: TaskStatus.TODO };
-      const result = await service.findAll(filter);
+      await service.findAll(filter);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].status).toBe(TaskStatus.TODO);
+      expect(mockPrismaService.task.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ status: TaskStatus.TODO }),
+        }),
+      );
     });
 
-    it('should filter tasks by priority', async () => {
-      const tasks = [
-        { ...mockTask, assigneeId: null },
-        { ...mockTask, id: 'task-uuid-2222', priority: TaskPriority.HIGH, assigneeId: null },
-      ];
-      mockPrismaService.task.findMany.mockResolvedValue(tasks);
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.tag.findMany.mockResolvedValue([]);
+    it('should pass priority filter in where clause', async () => {
+      mockPrismaService.task.findMany.mockResolvedValue([{ ...mockTask }]);
 
       const filter: TaskFilterDto = { priority: TaskPriority.MEDIUM };
-      const result = await service.findAll(filter);
+      await service.findAll(filter);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].priority).toBe(TaskPriority.MEDIUM);
+      expect(mockPrismaService.task.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ priority: TaskPriority.MEDIUM }),
+        }),
+      );
     });
 
-    it('should filter tasks by assigneeId', async () => {
-      const OTHER_USER_ID = 'user-uuid-9999';
-      const tasks = [
-        { ...mockTask, assigneeId: USER_ID },
-        { ...mockTask, id: 'task-uuid-2222', assigneeId: OTHER_USER_ID },
-      ];
-      mockPrismaService.task.findMany.mockResolvedValue(tasks);
-      mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.tag.findMany.mockResolvedValue([]);
+    it('should pass assigneeId filter in where clause', async () => {
+      mockPrismaService.task.findMany.mockResolvedValue([{ ...mockTask }]);
 
       const filter: TaskFilterDto = { assigneeId: USER_ID };
-      const result = await service.findAll(filter);
+      await service.findAll(filter);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].assigneeId).toBe(USER_ID);
+      expect(mockPrismaService.task.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ assigneeId: USER_ID }),
+        }),
+      );
     });
 
-    it('should filter tasks by projectId', async () => {
-      const OTHER_PROJECT_ID = 'proj-uuid-9999';
-      const tasks = [
-        { ...mockTask, assigneeId: null },
-        { ...mockTask, id: 'task-uuid-2222', projectId: OTHER_PROJECT_ID, assigneeId: null },
-      ];
-      mockPrismaService.task.findMany.mockResolvedValue(tasks);
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.tag.findMany.mockResolvedValue([]);
+    it('should pass projectId filter in where clause', async () => {
+      mockPrismaService.task.findMany.mockResolvedValue([{ ...mockTask }]);
 
       const filter: TaskFilterDto = { projectId: PROJECT_ID };
-      const result = await service.findAll(filter);
+      await service.findAll(filter);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].projectId).toBe(PROJECT_ID);
+      expect(mockPrismaService.task.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ projectId: PROJECT_ID }),
+        }),
+      );
     });
 
-    it('should filter tasks by dueDateFrom', async () => {
-      const future = new Date('2099-01-01');
-      const past = new Date('2000-01-01');
-      const tasks = [
-        { ...mockTask, id: 'task-uuid-future', dueDate: future, assigneeId: null },
-        { ...mockTask, id: 'task-uuid-past', dueDate: past, assigneeId: null },
-        { ...mockTask, id: 'task-uuid-noduedate', dueDate: null, assigneeId: null },
-      ];
-      mockPrismaService.task.findMany.mockResolvedValue(tasks);
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.tag.findMany.mockResolvedValue([]);
+    it('should pass dueDateFrom as gte filter in where clause', async () => {
+      mockPrismaService.task.findMany.mockResolvedValue([]);
 
       const filter: TaskFilterDto = { dueDateFrom: '2050-01-01' };
-      const result = await service.findAll(filter);
+      await service.findAll(filter);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('task-uuid-future');
+      expect(mockPrismaService.task.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            dueDate: expect.objectContaining({ gte: new Date('2050-01-01') }),
+          }),
+        }),
+      );
     });
 
-    it('should filter tasks by dueDateTo', async () => {
-      const future = new Date('2099-01-01');
-      const past = new Date('2000-01-01');
-      const tasks = [
-        { ...mockTask, id: 'task-uuid-future', dueDate: future, assigneeId: null },
-        { ...mockTask, id: 'task-uuid-past', dueDate: past, assigneeId: null },
-      ];
-      mockPrismaService.task.findMany.mockResolvedValue(tasks);
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.tag.findMany.mockResolvedValue([]);
+    it('should pass dueDateTo as lte filter in where clause', async () => {
+      mockPrismaService.task.findMany.mockResolvedValue([]);
 
       const filter: TaskFilterDto = { dueDateTo: '2050-01-01' };
-      const result = await service.findAll(filter);
+      await service.findAll(filter);
 
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('task-uuid-past');
+      expect(mockPrismaService.task.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            dueDate: expect.objectContaining({ lte: new Date('2050-01-01') }),
+          }),
+        }),
+      );
+    });
+
+    it('should pass both dueDateFrom and dueDateTo in dueDate where clause', async () => {
+      mockPrismaService.task.findMany.mockResolvedValue([]);
+
+      const filter: TaskFilterDto = { dueDateFrom: '2024-01-01', dueDateTo: '2024-12-31' };
+      await service.findAll(filter);
+
+      expect(mockPrismaService.task.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            dueDate: {
+              gte: new Date('2024-01-01'),
+              lte: new Date('2024-12-31'),
+            },
+          }),
+        }),
+      );
+    });
+
+    it('should apply all filters simultaneously in a single where clause', async () => {
+      mockPrismaService.task.findMany.mockResolvedValue([{ ...mockTask }]);
+
+      const filter: TaskFilterDto = {
+        status: TaskStatus.TODO,
+        priority: TaskPriority.HIGH,
+        assigneeId: USER_ID,
+        projectId: PROJECT_ID,
+        dueDateFrom: '2024-01-01',
+        dueDateTo: '2024-12-31',
+      };
+      await service.findAll(filter);
+
+      expect(mockPrismaService.task.findMany).toHaveBeenCalledWith({
+        where: {
+          status: TaskStatus.TODO,
+          priority: TaskPriority.HIGH,
+          assigneeId: USER_ID,
+          projectId: PROJECT_ID,
+          dueDate: {
+            gte: new Date('2024-01-01'),
+            lte: new Date('2024-12-31'),
+          },
+        },
+        include: { assignee: true, project: true, tags: true },
+        orderBy: { createdAt: 'desc' },
+      });
     });
 
     it('should return empty array when no tasks exist', async () => {
@@ -246,34 +268,45 @@ describe('TasksService', () => {
       expect(result).toHaveLength(0);
     });
 
-    it('should handle tasks with no assignee (assigneeId is null)', async () => {
-      const taskWithoutAssignee = { ...mockTask, assigneeId: null };
-      mockPrismaService.task.findMany.mockResolvedValue([taskWithoutAssignee]);
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.tag.findMany.mockResolvedValue([]);
+    it('should return tasks with embedded relations (assignee, project, tags)', async () => {
+      const taskWithRelations = {
+        ...mockTask,
+        assignee: mockUser,
+        project: mockProject,
+        tags: [mockTag],
+      };
+      mockPrismaService.task.findMany.mockResolvedValue([taskWithRelations]);
 
       const result = await service.findAll({} as TaskFilterDto);
 
-      expect(mockPrismaService.user.findUnique).not.toHaveBeenCalled();
-      expect(result[0].assignee).toBeNull();
+      expect(result[0].assignee).toEqual(mockUser);
+      expect(result[0].project).toEqual(mockProject);
+      expect(result[0].tags).toHaveLength(1);
     });
 
-    it('should filter tasks by COMPLETED status', async () => {
-      const tasks = [
-        { ...mockTask, id: 'task-uuid-todo', status: TaskStatus.TODO, assigneeId: null },
-        { ...mockTask, id: 'task-uuid-done', status: TaskStatus.COMPLETED, assigneeId: null },
-        { ...mockTask, id: 'task-uuid-cancelled', status: TaskStatus.CANCELLED, assigneeId: null },
-      ];
-      mockPrismaService.task.findMany.mockResolvedValue(tasks);
-      mockPrismaService.user.findUnique.mockResolvedValue(null);
-      mockPrismaService.project.findUnique.mockResolvedValue(mockProject);
-      mockPrismaService.tag.findMany.mockResolvedValue([]);
+    it('should never call user.findUnique, project.findUnique, or tag.findMany separately', async () => {
+      mockPrismaService.task.findMany.mockResolvedValue([{ ...mockTask, assigneeId: null, assignee: null }]);
+
+      await service.findAll({} as TaskFilterDto);
+
+      expect(mockPrismaService.user.findUnique).not.toHaveBeenCalled();
+      expect(mockPrismaService.project.findUnique).not.toHaveBeenCalled();
+      expect(mockPrismaService.tag.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should filter tasks by COMPLETED status via where clause', async () => {
+      const completedTask = { ...mockTask, id: 'task-uuid-done', status: TaskStatus.COMPLETED };
+      mockPrismaService.task.findMany.mockResolvedValue([completedTask]);
 
       const filter: TaskFilterDto = { status: TaskStatus.COMPLETED };
       const result = await service.findAll(filter);
 
+      expect(mockPrismaService.task.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ status: TaskStatus.COMPLETED }),
+        }),
+      );
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe('task-uuid-done');
       expect(result[0].status).toBe(TaskStatus.COMPLETED);
     });
   });
