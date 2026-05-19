@@ -127,4 +127,5 @@
 - The Dependabot PR merge pattern (auto-merge for patch versions, 48h SLA for minor) should be documented in a MAINTENANCE.md file to establish team norms.
 - Once integration tests are added (CRITICAL), prioritize OpenAPI spec validation in CI — catch contract drift before it reaches production.
 - Suggest moving 'Add lint rule to catch hardcoded magic strings in tests' to BLOCKER status after PR #10 is fixed — prevents future regression.
-
+- Breaking return type changes in service methods (Task[] → paginated object) require cascading updates across all consumers; future cycles should identify and update dependent code paths before approval, or use wrapper methods to maintain backward compatibility
+- Semantic regression checks flagged API contract breaks but didn't block approval — enforce stricter gates on breaking changes to downstream consumers before merging pagination or similar structural refactors
