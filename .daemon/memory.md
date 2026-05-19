@@ -143,4 +143,5 @@
 - Add a task to document pagination cursor encoding/decoding logic with examples before integration tests validate the contract — prevents spec-reality drift
 - Prioritize Dependabot merge automation early — it removes friction and lets the team focus on logic vs. dependency churn
 - Once ProjectsService and UsersService DTOs are hardened (PR #14 equivalent), run a quick batch coverage spike on all services to establish baseline before codecov enforcement
-
+- Fire-and-forget async patterns break API error contracts: callers lose ability to detect/handle downstream failures (email, etc.); future cycles should preserve error propagation or explicitly document the semantic change and update callers before merging.
+- Semantic regression checks caught silent error-handling changes that would break observability (logging, metrics, circuit breakers); validate that fire-and-forget patterns are acceptable in the domain before implementation, not after.
