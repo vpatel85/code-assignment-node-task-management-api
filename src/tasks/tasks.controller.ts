@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
+import { ApiResponse } from '@nestjs/swagger';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -9,7 +10,19 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Get()
-  findAll(@Query() filterDto: TaskFilterDto) {
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of tasks',
+    schema: {
+      properties: {
+        data: { type: 'array', items: { $ref: '#/components/schemas/Task' } },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        limit: { type: 'number' },
+      },
+    },
+  })
+  findAll(@Query() filterDto: TaskFilterDto): Promise<{ data: any[]; total: number; page: number; limit: number; }> {
     return this.tasksService.findAll(filterDto);
   }
 
