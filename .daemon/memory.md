@@ -53,3 +53,10 @@
 - Consider adding response interceptor tests to ensure all API responses conform to the OpenAPI schema
 - When adding validation decorators (e.g., `@IsNotEmpty`), verify that `forbidNonWhitelisted: true` won't break existing API consumers by checking integration points; consider making it opt-in per endpoint or documenting as a breaking change clearly before deployment.
 - E2E tests weren't added despite the build system flagging "No test files found for changed files" — establish a rule that validation-affecting changes (especially DTO modifications) must include corresponding e2e test cases to prevent silent regressions in request handling.
+**2026-05-19 — Goal Suggestions (Cycle #4396):**
+- Audit all existing DTOs to ensure they have complete @IsNotEmpty, @IsString, @IsNumber, etc. decorators—PR #7 added the infrastructure but coverage may be incomplete
+- Create a test pattern/helper for 'invalid DTO rejection tests' to ensure every endpoint properly rejects bad input—this could catch validation gaps early
+- Consider adding a 'schema validation' step to integration tests that compares actual response structure against the OpenAPI spec (use a tool like json-schema-validator)
+- Prioritize the TasksService unit tests immediately—it's the last service blocking integration tests, which in turn block API contract validation
+- Set a 48-hour SLA for Dependabot PRs with auto-merge for patch versions only; minor versions require review (reduce toil of manual merges)
+
