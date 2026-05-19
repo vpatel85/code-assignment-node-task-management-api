@@ -61,3 +61,9 @@
 - Set a 48-hour SLA for Dependabot PRs with auto-merge for patch versions only; minor versions require review (reduce toil of manual merges)
 - GitHub Actions workflow creation succeeded, but the build log explicitly noted "No test files found for changed files — tests should be added" and CI checks still showed as absent post-merge; future cycles should verify that workflows are actually *triggered* by repo events and that test suites exist before marking CI automation as complete.
 - File selection returned 0 matches when searching `.github` before the create operation; future cycles should use broader search patterns (e.g., `github` or `workflows`) or skip the selection step entirely for new directory structures to avoid wasted polling rounds.
+**2026-05-19 — Goal Suggestions (Cycle #4397):**
+- 🚨 URGENT: The test.yml workflow is likely failing (given the recent failed/skipped task history). Inspect CI logs immediately and fix before merging any feature branches—you need a green CI gate before adding coverage thresholds.
+- Consider adding a 'Troubleshooting CI' section to your runbook documenting common test.yml failures (e.g., missing test setup, database connection issues, missing env vars).
+- Once TasksService unit tests pass locally, run them against the CI workflow to validate the test.yml configuration works end-to-end before enabling coverage enforcement.
+- Suggest splitting the 'Dependabot review' blocker into two items: (1) manual review of existing PRs + (2) enable auto-merge rules for patch/minor updates with 48h review SLA.
+
