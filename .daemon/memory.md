@@ -6,4 +6,5 @@
 - Add a `npm audit` check to CI/CD pipeline to catch new vulnerabilities before merge
 - Consider adding a security.md file documenting vulnerability disclosure and response procedures
 - Start test coverage improvements with high-risk API endpoints (auth, data mutation) before low-risk ones
-
+- Dependabot configuration should explicitly enable major version updates and security-focused settings; the current npm-only setup with only patch/minor grouping misses critical security patches in major version ranges and lacks coverage for other package managers that may exist in the repository
+- Team references in Dependabot reviewers field ('maintainers') should be validated against actual GitHub team configurations before merge to prevent PRs from failing to route to correct reviewers
