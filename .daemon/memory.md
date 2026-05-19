@@ -145,3 +145,9 @@
 - Once ProjectsService and UsersService DTOs are hardened (PR #14 equivalent), run a quick batch coverage spike on all services to establish baseline before codecov enforcement
 - Fire-and-forget async patterns break API error contracts: callers lose ability to detect/handle downstream failures (email, etc.); future cycles should preserve error propagation or explicitly document the semantic change and update callers before merging.
 - Semantic regression checks caught silent error-handling changes that would break observability (logging, metrics, circuit breakers); validate that fire-and-forget patterns are acceptable in the domain before implementation, not after.
+**2026-05-19 — Goal Suggestions (Cycle #4411):**
+- For fire-and-forget operations: implement structured logging with correlation IDs, add metrics for success/failure rates, and consider a queue-based approach (Bull/RabbitMQ) for production reliability rather than raw Promise.reject() swallowing
+- Create a @FireAndForget() decorator to standardize async operation handling and centralize error handling logic — this prevents pattern drift across future service methods
+- Add monitoring/alerting for silent failures in async operations (use NestJS logger or external APM tool to surface uncaught rejections)
+- Consider establishing a 'async operation contract' doc: when to use fire-and-forget vs awaited operations, error handling expectations, and monitoring requirements
+
