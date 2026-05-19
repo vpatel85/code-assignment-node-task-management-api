@@ -66,4 +66,5 @@
 - Consider adding a 'Troubleshooting CI' section to your runbook documenting common test.yml failures (e.g., missing test setup, database connection issues, missing env vars).
 - Once TasksService unit tests pass locally, run them against the CI workflow to validate the test.yml configuration works end-to-end before enabling coverage enforcement.
 - Suggest splitting the 'Dependabot review' blocker into two items: (1) manual review of existing PRs + (2) enable auto-merge rules for patch/minor updates with 48h review SLA.
-
+- TasksService test suite creation requires mocking PrismaService and EmailService dependencies; ensure mock implementations cover all service methods called (e.g., sendTaskAssignmentNotification) to avoid runtime failures during test execution
+- Build log showed "No test files found for changed files" warning but PR was still approved — future cycles should enforce that unit test files must exist and pass locally before opening PRs, not rely on missing CI to catch gaps
