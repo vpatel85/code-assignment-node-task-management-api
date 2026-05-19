@@ -114,3 +114,9 @@
 - Add a quick inventory task: audit which endpoints are still missing @UseGuards/@UsePipes decorators or have controller-level DTO enforcement gaps—this will clarify scope for the validation propagation effort.
 - Semantic regression checks flag test coverage loss (shape/content validation, filter behavior, null handling, dependent service calls) — when refactoring tests, preserve assertions that verify actual service behavior and data transformation, not just mock call parameters
 - Missing test assertions on filter capabilities (dueDateTo, searchTerm, tag filters) and result set reduction allowed bugs to slip through — future Prisma query audits must include tests that verify filters correctly reduce result counts and apply to the correct fields
+**2026-05-19 — Goal Suggestions (Cycle #4407):**
+- Consider creating a test fixture for TaskStatus and other enums immediately — this blocks both PR #10 resolution and future test stability
+- Add a Prisma integration test that validates all service methods return hydrated relations (not just bare IDs) — this prevents regressions like the ones just fixed
+- Establish a pre-commit hook that runs `npx tsc --noEmit` to catch enum/constant reference errors before they reach CI
+- Document Prisma relation-loading best practices as a runbook for future service methods (include vs select trade-offs, N+1 prevention patterns)
+
