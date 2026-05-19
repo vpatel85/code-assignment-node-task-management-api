@@ -135,4 +135,5 @@
 - Add pagination contract tests (first page, last page, invalid cursor handling) before standardizing across other list endpoints — establish the pattern once
 - Update Dependabot auto-merge workflow to target patch + minor updates with >80% test coverage enforcement — reduces manual review overhead
 - Document cursor encoding strategy (Base64? timestamp? ID?). This design decision should live in ADR or API docs to guide future implementations
-
+- Semantic regression checks can fail silently with JSON parse errors (position 644, line 9)—validate JSON output from file modifications before regression stage to catch malformed diffs early
+- Build log explicitly flagged "No test files found for changed files" but PR was still approved—future cycles should enforce test coverage gates or block approval when test additions are missing for service layer changes
