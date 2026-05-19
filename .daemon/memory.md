@@ -51,4 +51,5 @@
 - Create a simple script to auto-merge Dependabot PRs for patch updates only (^0.0.x) after npm audit passes, reserve minor/major for manual review
 - TasksService tests are now the single biggest blocker—prioritize completing all CRUD + filter test cases before moving to integration tests
 - Consider adding response interceptor tests to ensure all API responses conform to the OpenAPI schema
-
+- When adding validation decorators (e.g., `@IsNotEmpty`), verify that `forbidNonWhitelisted: true` won't break existing API consumers by checking integration points; consider making it opt-in per endpoint or documenting as a breaking change clearly before deployment.
+- E2E tests weren't added despite the build system flagging "No test files found for changed files" — establish a rule that validation-affecting changes (especially DTO modifications) must include corresponding e2e test cases to prevent silent regressions in request handling.
