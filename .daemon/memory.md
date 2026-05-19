@@ -91,3 +91,10 @@
 - Consider documenting a 'Contract-First Testing' approach: tests reference domain enums from shared constants, OpenAPI spec is generated from DTOs, and actual handler responses are validated against the spec — this creates a feedback loop that prevents drift
 - When spec files don't exist in repo, search patterns return 0 matches silently — validate file existence before attempting reads, or use broader glob patterns (e.g., `**/*.service.spec.ts`) to catch missing test infrastructure earlier in the build loop
 - Spec file creation without corresponding test execution (log: "No test files found for changed files — tests should be added") indicates missing Jest configuration or test runner setup — flag repos missing active test infrastructure before approving changes to service layer code
+**2026-05-19 — Goal Suggestions (Cycle #4401):**
+- Consider adding a task to create a shared test fixture/factory library immediately after fixing PR #10 enum issue — this will unblock integration tests and prevent similar enum reference bugs
+- The enum reference bug in PR #10 and the need for shared constants are tightly coupled; solving #10 first will inform the design of the shared enums file
+- Consider adding 'Create GitHub issue template for bug triage' to establish the Linear triage workflow mentioned in Next Frontier — without clear intake, bugs may slip through
+- Add a task to enable TypeScript `strict: true` in tsconfig if not already set — this would have caught the enum reference error at compile time
+- Monitor Dependabot PR velocity and establish auto-merge criteria (e.g., patch-only, test passing, security audit clean) to reduce manual review burden
+
