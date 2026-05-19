@@ -137,3 +137,10 @@
 - Document cursor encoding strategy (Base64? timestamp? ID?). This design decision should live in ADR or API docs to guide future implementations
 - Semantic regression checks can fail silently with JSON parse errors (position 644, line 9)—validate JSON output from file modifications before regression stage to catch malformed diffs early
 - Build log explicitly flagged "No test files found for changed files" but PR was still approved—future cycles should enforce test coverage gates or block approval when test additions are missing for service layer changes
+**2026-05-19 — Goal Suggestions (Cycle #4410):**
+- Before tackling integration tests, unblock the enum/constants blocker (PR #10) — it's a dependency for test quality across the board and should be the next immediate task
+- Consider adding a 'test reliability audit' task explicitly focused on flakiness patterns (e.g., timing-dependent tests, missing mocks, database state leaks) — this will speed up the integration test phase
+- Add a task to document pagination cursor encoding/decoding logic with examples before integration tests validate the contract — prevents spec-reality drift
+- Prioritize Dependabot merge automation early — it removes friction and lets the team focus on logic vs. dependency churn
+- Once ProjectsService and UsersService DTOs are hardened (PR #14 equivalent), run a quick batch coverage spike on all services to establish baseline before codecov enforcement
+
