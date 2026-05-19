@@ -37,3 +37,10 @@
 - API contract enforcement via OpenAPI is valuable; consider generating docs from spec rather than writing manually to keep spec/code in sync
 - Build log shows "No test files found for changed files — tests should be added" but delivery note claims tests were added; future cycles should verify test files actually exist in the repo before marking complete, as approval gate may pass without CI infrastructure to catch missing artifacts.
 - Search pattern `\.service\.spec\.ts` returned 0 matches initially, indicating test files may not follow standard naming convention or directory structure; future cycles should confirm Jest test file patterns and locations during file selection phase to avoid blind edits.
+**2026-05-19 — Goal Suggestions (Cycle #4393):**
+- **URGENT**: Address the failed/skipped dependency bump tasks—determine why they're failing and establish a dependency review process with clear decision criteria (auto-merge patch/minor, manual review major)
+- Split test coverage work into phases: (1) Unit tests for all services (TasksService is still pending), (2) Integration tests for controllers, (3) E2E tests for critical workflows
+- Consider adding a GitHub Action that auto-merges safe Dependabot PRs (patch versions with passing CI) to reduce manual review burden
+- Add input validation and error handling unit tests—these are critical for API reliability and often overlooked
+- Document the Linear triage workflow before accumulating too many issues (create issue templates, severity labels, assignment rules)
+
