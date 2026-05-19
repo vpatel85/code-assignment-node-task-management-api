@@ -112,4 +112,5 @@
 - Before investing in test utilities library, complete 2-3 more integration tests manually to identify the actual patterns that repeat—build utilities based on real needs rather than anticipated ones.
 - The 'failed' dependency bump cycle suggests Dependabot PRs may have breaking changes or test failures. Recommend triaging one of those failed PRs next to unblock the auto-merge workflow and establish the actual dependency update cadence.
 - Add a quick inventory task: audit which endpoints are still missing @UseGuards/@UsePipes decorators or have controller-level DTO enforcement gaps—this will clarify scope for the validation propagation effort.
-
+- Semantic regression checks flag test coverage loss (shape/content validation, filter behavior, null handling, dependent service calls) — when refactoring tests, preserve assertions that verify actual service behavior and data transformation, not just mock call parameters
+- Missing test assertions on filter capabilities (dueDateTo, searchTerm, tag filters) and result set reduction allowed bugs to slip through — future Prisma query audits must include tests that verify filters correctly reduce result counts and apply to the correct fields
