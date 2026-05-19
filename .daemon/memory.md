@@ -97,4 +97,5 @@
 - Consider adding 'Create GitHub issue template for bug triage' to establish the Linear triage workflow mentioned in Next Frontier — without clear intake, bugs may slip through
 - Add a task to enable TypeScript `strict: true` in tsconfig if not already set — this would have caught the enum reference error at compile time
 - Monitor Dependabot PR velocity and establish auto-merge criteria (e.g., patch-only, test passing, security audit clean) to reduce manual review burden
-
+- Semantic regression checks can fail silently with JSON parse errors (position 977) — validate filter/pipe output structure early, especially when introducing new exception formatting, to catch malformed responses before PR approval
+- ValidationPipe with custom exception factory requires explicit HttpStatus and error shape definition in the filter — relying on NestJS defaults may not enforce consistent 400 responses across all validation scenarios (DTO, query params, etc.)
