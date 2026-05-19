@@ -43,4 +43,5 @@
 - Consider adding a GitHub Action that auto-merges safe Dependabot PRs (patch versions with passing CI) to reduce manual review burden
 - Add input validation and error handling unit tests—these are critical for API reliability and often overlooked
 - Document the Linear triage workflow before accumulating too many issues (create issue templates, severity labels, assignment rules)
-
+- Swagger setup requires only 3 files touched (main.ts + 2 DTOs minimum) — controller annotations can be added incrementally; prioritize DTO decorators first since they define the schema contract that Swagger depends on
+- Build cycles without CI checks will auto-approve even when test files are missing — add a pre-flight validation step that flags repos lacking test infrastructure before proceeding to review stage
