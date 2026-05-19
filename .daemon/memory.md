@@ -8,3 +8,10 @@
 - Start test coverage improvements with high-risk API endpoints (auth, data mutation) before low-risk ones
 - Dependabot configuration should explicitly enable major version updates and security-focused settings; the current npm-only setup with only patch/minor grouping misses critical security patches in major version ranges and lacks coverage for other package managers that may exist in the repository
 - Team references in Dependabot reviewers field ('maintainers') should be validated against actual GitHub team configurations before merge to prevent PRs from failing to route to correct reviewers
+**2026-05-19 — Goal Suggestions (Cycle #4390):**
+- Consider setting up automatic merging for patch-level Dependabot PRs to reduce manual review burden
+- Add a bug triage meeting cadence (weekly?) to systematically work through Linear issues before they pile up
+- Create a test coverage dashboard to visualize progress toward coverage targets and identify gaps
+- Document which API endpoints are 'critical' for coverage purposes—not all endpoints need 100% coverage
+- Consider adding a SECURITY.md file with the incident response runbook for transparency with users
+
