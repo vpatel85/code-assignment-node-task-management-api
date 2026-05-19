@@ -53,3 +53,19 @@ The GET /tasks endpoint supports the following query parameters:
 - dueDateTo: ISO date string
 
 Example: GET /tasks?status=TODO&priority=HIGH
+
+## Security
+
+### Automated vulnerability scanning
+
+A GitHub Actions workflow (`.github/workflows/audit.yml`) runs `npm audit --audit-level=high` on every push and pull request targeting `main`/`master`. The job will **fail** if any dependency has a **high** or **critical** severity vulnerability, blocking the PR from merging.
+
+### Running the audit locally
+
+```bash
+# Fail on high/critical vulnerabilities (mirrors CI behaviour)
+npm audit --audit-level=high
+
+# Full audit report (all severity levels)
+npm audit
+```
