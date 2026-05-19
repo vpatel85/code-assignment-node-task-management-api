@@ -77,7 +77,7 @@ const mockPrismaService = {
 };
 
 const mockEmailService = {
-  sendTaskAssignmentNotification: jest.fn(),
+  sendTaskAssignmentNotification: jest.fn().mockResolvedValue(undefined),
 };
 
 // ---------------------------------------------------------------------------
@@ -100,6 +100,9 @@ describe('TasksService', () => {
 
     // Reset all mocks before each test
     jest.clearAllMocks();
+
+    // Restore default resolved-promise return so fire-and-forget .catch() never throws
+    mockEmailService.sendTaskAssignmentNotification.mockResolvedValue(undefined);
   });
 
   // -------------------------------------------------------------------------

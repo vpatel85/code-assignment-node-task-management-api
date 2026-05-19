@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import { CreateTaskDto } from './dto/create-task.dto';
@@ -8,6 +8,8 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class TasksService {
+  private readonly logger = new Logger(TasksService.name);
+
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
@@ -96,10 +98,10 @@ export class TasksService {
     });
 
     if (task.assignee) {
-      await this.emailService.sendTaskAssignmentNotification(
+      this.emailService.sendTaskAssignmentNotification(
         task.assignee.email,
         task.title
-      );
+      ).catch(err => this.logger.error('Failed to send email notification', err.stack));
     }
 
     return task;
@@ -140,10 +142,10 @@ export class TasksService {
     });
 
     if (updateTaskDto.assigneeId && updateTaskDto.assigneeId !== existingTask.assigneeId) {
-      await this.emailService.sendTaskAssignmentNotification(
+      this.emailService.sendTaskAssignmentNotification(
         task.assignee!.email,
         task.title
-      );
+      ).catch(err => this.logger.error('Failed to send email notification', err.stack));
     }
 
     return task;
