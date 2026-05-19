@@ -74,4 +74,5 @@
 - For DTO validation, create a shared validation pipe (e.g., ValidateDtoPipe) and apply it globally to all controllers to enforce contracts consistently
 - Add a 'Contract Tests' section to CI that validates OpenAPI spec against actual HTTP responses — this will catch drift early
 - Consider establishing a dependency update policy: auto-merge Dependabot PRs for patch versions with passing tests, require manual review for minor/major versions
-
+- When TaskStatus enum values are referenced in tests, verify they exist in the Prisma schema first—use `prisma generate` before running `tsc --noEmit` to ensure @prisma/client exports match the schema definition, avoiding TS2339 errors on missing enum properties.
+- Test files created by build loops should be validated against the actual enum definitions in the codebase before commit; add a pre-commit check that scans spec files for enum references and cross-validates them against schema.prisma to catch mismatches early.
