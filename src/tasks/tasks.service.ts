@@ -6,6 +6,13 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskFilterDto } from './dto/task-filter.dto';
 import { Prisma } from '@prisma/client';
 
+interface PaginatedTaskResponse {
+  data: any[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 @Injectable()
 export class TasksService {
   constructor(
@@ -13,7 +20,7 @@ export class TasksService {
     private emailService: EmailService,
   ) {}
 
-  async findAll(filterDto: TaskFilterDto) {
+  async findAll(filterDto: TaskFilterDto): Promise<PaginatedTaskResponse> {
     const where: Prisma.TaskWhereInput = {};
 
     if (filterDto.status) {
@@ -42,17 +49,33 @@ export class TasksService {
       }
     }
 
-    return this.prisma.task.findMany({
-      where,
-      include: {
-        assignee: true,
-        project: true,
-        tags: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const page = filterDto.page || 1;
+    const limit = filterDto.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const [tasks, total] = await Promise.all([
+      this.prisma.task.findMany({
+        where,
+        include: {
+          assignee: true,
+          project: true,
+          tags: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      this.prisma.task.count({ where }),
+    ]);
+
+    return {
+      data: tasks,
+      total,
+      page,
+      limit,
+    };
   }
 
   async findOne(id: string) {
