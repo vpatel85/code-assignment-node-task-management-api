@@ -82,4 +82,5 @@
 - Document where TaskStatus enum should be sourced from — likely needs to be a shared constant exported from a domain module, not duplicated in tests
 - Consider adding a pre-test validation step that verifies all enums referenced in test files actually exist in the source code (could catch this in CI)
 - Prioritize test reliability audit (PR #9 + #10) before enforcing coverage thresholds — flaky tests will undermine CI/CD confidence
-
+- When `npm audit` fails due to transitive dev dependencies, use `npm audit --audit-level=moderate` or add exceptions via `.npmrc` / `npm audit --json` filtering rather than `--omit=dev`, which removes security coverage for production code and creates false negatives in CI.
+- Before opening a PR, verify the repo has CI checks enabled and test files in place—this cycle's lack of CI infrastructure allowed a broken audit fix to be "approved," masking that the solution removed dev dependency scanning entirely instead of resolving the actual vulnerability.
